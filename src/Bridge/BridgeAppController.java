@@ -82,7 +82,7 @@ public class BridgeAppController implements ISubscriber {
         log(msg.getSentTo() + " has been notified.");
     }
 
-    // Received a Whisper (private message)
+    // Received a SongRequest
     private void handleSongRequest(SongRequest msg) throws JMSException {
         // Let's first log that a song request has been received
         log("User \"" + msg.getSentFrom() + "\" sent a song request with ID: " + msg.getSongID());
