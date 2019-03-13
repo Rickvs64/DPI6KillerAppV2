@@ -38,11 +38,6 @@ public class ServerAppController implements ISubscriber {
         initConnector();
     }
 
-    @FXML
-    private void TEST() {
-        playNewVideo("HX66tnGadhg");
-    }
-
     // Initialize ActiveMQ connection and define listen channels
     private void initConnector() {
         List<String> listenQueues = new ArrayList<String>();
