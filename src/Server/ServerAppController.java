@@ -53,6 +53,7 @@ public class ServerAppController implements ISubscriber {
     private void playNewVideo(String videoID) {
         // Todo: Can we hide the title and playlist buttons too?
 
+        // Use a separate thread to update UI
         // Avoid throwing IllegalStateException by running from a non-JavaFX thread.
         Platform.runLater(
             () -> {
