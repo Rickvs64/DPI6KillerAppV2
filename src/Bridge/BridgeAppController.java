@@ -2,11 +2,14 @@ package Bridge;
 
 import Shared.Connector;
 import Shared.ISubscriber;
+import Shared.MessageTypes.ChatMessage;
 import Shared.MessageTypes.ClientInitMessage;
+import Shared.MessageTypes.Whisper;
 import Shared.NetworkMessage;
 import javafx.fxml.FXML;
 import javafx.scene.text.Text;
 
+import javax.jms.JMSException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,12 +49,51 @@ public class BridgeAppController implements ISubscriber {
         lbl_Logger.setText(log);
     }
 
+    // Received a ClientInitMessage
+    private void handleClientInitMessage(ClientInitMessage msg) throws JMSException {
+        log("User \"" + msg.getSentFrom() + "\" has joined the lobby.");
+
+        connector.sendMessageToQueue(msg, "InitsFromBridge");
+        log("Server has been notified.");
+    }
+
+    // Received a ChatMessage
+    private void handleChatMessage(ChatMessage msg) throws JMSException {
+        log("User \"" + msg.getSentFrom() + "\" sent a message: " + msg.getChatMessage());
+
+        // First send to the server
+        connector.sendMessageToQueue(msg, "ChatMessagesFromBridgeForServer");
+        log("Server has been notified.");
+
+        // Then send to every client
+        connector.sendMessageToTopic(msg, "ChatMessagesFromBridgeForClient");
+        log("Clients have been notified.");
+    }
+
+    // Received a Whisper (private message)
+    private void handleWhisper(Whisper msg) throws JMSException {
+        // We'll log that a whisper has been sent but will NOT show the actual private content here
+        log("User \"" + msg.getSentFrom() + "\" sent a whisper to " + msg.getSentTo() + ".");
+
+        // Doesn't need to be sent to the server
+        // But will have to be sent to one specific client/username
+        connector.sendMessageToQueue(msg, "WhispersFromBridge_" + msg.getSentTo());
+        log(msg.getSentTo() + " has been notified.");
+    }
+
     @Override
-    public void onMessageReceived(NetworkMessage message) {
+    public void onMessageReceived(NetworkMessage message) throws JMSException {
         switch (message.getClass().getSimpleName()) {
             case "ClientInitMessage":
-                ClientInitMessage msg = (ClientInitMessage) message;
-                log("User \"" + msg.getSentFrom() + "\" has joined the lobby.");
+                handleClientInitMessage((ClientInitMessage) message);
+                break;
+
+            case "ChatMessage":
+                handleChatMessage((ChatMessage) message);
+                break;
+
+            case "Whisper":
+                handleWhisper((Whisper) message);
                 break;
 
             default:
@@ -59,4 +101,5 @@ public class BridgeAppController implements ISubscriber {
                 break;
         }
     }
+
 }

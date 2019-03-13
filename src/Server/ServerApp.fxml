@@ -8,9 +8,9 @@
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/10.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Server.ServerAppController">
    <children>
       <WebView fx:id="webview_YouTubeVideo" prefHeight="400.0" prefWidth="600.0" />
-      <ScrollPane hbarPolicy="NEVER" layoutY="290.0" prefHeight="110.0" prefWidth="200.0">
+      <ScrollPane hbarPolicy="NEVER" layoutY="290.0" prefHeight="110.0" prefWidth="300.0">
          <content>
-            <Text strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="196.53668212890625" />
+            <Text fx:id="lbl_ChatWindow" strokeType="OUTSIDE" strokeWidth="0.0" wrappingWidth="295.73663330078125" />
          </content></ScrollPane>
    </children>
 </AnchorPane>
