@@ -4,6 +4,7 @@ import Shared.Connector;
 import Shared.ISubscriber;
 import Shared.MessageTypes.ChatMessage;
 import Shared.MessageTypes.ClientInitMessage;
+import Shared.MessageTypes.SongRequest;
 import Shared.MessageTypes.Whisper;
 import Shared.NetworkMessage;
 import javafx.fxml.FXML;
@@ -73,12 +74,26 @@ public class BridgeAppController implements ISubscriber {
     // Received a Whisper (private message)
     private void handleWhisper(Whisper msg) throws JMSException {
         // We'll log that a whisper has been sent but will NOT show the actual private content here
-        log("User \"" + msg.getSentFrom() + "\" sent a whisper to " + msg.getSentTo() + ".");
+        log("User \"" + msg.getSentFrom() + "\" sent a whisper to \"" + msg.getSentTo() + "\".");
 
         // Doesn't need to be sent to the server
         // But will have to be sent to one specific client/username
         connector.sendMessageToQueue(msg, "WhispersFromBridge_" + msg.getSentTo());
         log(msg.getSentTo() + " has been notified.");
+    }
+
+    // Received a Whisper (private message)
+    private void handleSongRequest(SongRequest msg) throws JMSException {
+        // Let's first log that a song request has been received
+        log("User \"" + msg.getSentFrom() + "\" sent a song request with ID: " + msg.getSongID());
+
+        // First send to the server
+        connector.sendMessageToQueue(msg, "SongRequestsFromBridgeForServer");
+        log("Server has been notified.");
+
+        // Then send to every client
+        connector.sendMessageToTopic(msg, "SongRequestsFromBridgeForClient");
+        log("Clients have been notified.");
     }
 
     @Override
@@ -94,6 +109,10 @@ public class BridgeAppController implements ISubscriber {
 
             case "Whisper":
                 handleWhisper((Whisper) message);
+                break;
+
+            case "SongRequest":
+                handleSongRequest((SongRequest) message);
                 break;
 
             default:

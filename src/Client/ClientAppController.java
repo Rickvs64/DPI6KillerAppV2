@@ -4,6 +4,7 @@ import Shared.Connector;
 import Shared.ISubscriber;
 import Shared.MessageTypes.ChatMessage;
 import Shared.MessageTypes.ClientInitMessage;
+import Shared.MessageTypes.SongRequest;
 import Shared.MessageTypes.Whisper;
 import Shared.NetworkMessage;
 import javafx.fxml.FXML;
@@ -120,15 +121,31 @@ public class ClientAppController implements ISubscriber {
         log(msg.getSentFrom() + "->" + msg.getSentTo() + ": " + msg.getChatMessage());
     }
 
+    // Received a SongRequest
+    private void handleSongRequest(SongRequest msg) {
+        log("(" + msg.getSentFrom() + ") has requested a song with ID: " + msg.getSongID());
+    }
+
+    // Send a song request
+    private void trySendSongRequest(String songID) throws JMSException {
+        connector.sendMessageToQueue(new SongRequest(username, songID), "SongRequestsFromClient");
+    }
+
 
     // Username submit button pressed
     @FXML
     private void submitUsername() throws JMSException {
         if (!txt_Username.getText().trim().isEmpty() && txt_Username.getText().trim() != "") {
+            // First trim (should be unnecessary but still)
             username = txt_Username.getText().trim();
+
+            // Then remove ALL whitespaces (necessary for whisper functionality)
+            username = username.replaceAll("\\s","");
+
             initConnector();
             connector.sendMessageToQueue(new ClientInitMessage(username), "InitsFromClient");
             setControlsEnabled(true);
+            txt_Username.setText(username); // Since it might have been altered by Trim() or Regex
         }
     }
 
@@ -147,6 +164,15 @@ public class ClientAppController implements ISubscriber {
         }
     }
 
+    // Song request submit button pressed
+    @FXML
+    private void submitSongRequest() throws JMSException {
+        String actualID = txt_SongRequest.getText().trim();
+
+        trySendSongRequest(actualID);
+        txt_SongRequest.setText("");
+    }
+
     @Override
     public void onMessageReceived(NetworkMessage message) {
         switch (message.getClass().getSimpleName()) {
@@ -156,6 +182,10 @@ public class ClientAppController implements ISubscriber {
 
             case "Whisper":
                 handleWhisper((Whisper) message);
+                break;
+
+            case "SongRequest":
+                handleSongRequest((SongRequest) message);
                 break;
 
             default:

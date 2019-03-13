@@ -4,7 +4,9 @@ import Shared.Connector;
 import Shared.ISubscriber;
 import Shared.MessageTypes.ChatMessage;
 import Shared.MessageTypes.ClientInitMessage;
+import Shared.MessageTypes.SongRequest;
 import Shared.NetworkMessage;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.text.Text;
 import javafx.scene.web.WebView;
@@ -36,6 +38,11 @@ public class ServerAppController implements ISubscriber {
         initConnector();
     }
 
+    @FXML
+    private void TEST() {
+        playNewVideo("HX66tnGadhg");
+    }
+
     // Initialize ActiveMQ connection and define listen channels
     private void initConnector() {
         List<String> listenQueues = new ArrayList<String>();
@@ -50,8 +57,14 @@ public class ServerAppController implements ISubscriber {
 
     private void playNewVideo(String videoID) {
         // Todo: Can we hide the title and playlist buttons too?
-        String url = "https://www.youtube.com/embed/" + videoID + "?controls=0&autoplay=1";
-        webview_YouTubeVideo.getEngine().load(url);
+
+        // Avoid throwing IllegalStateException by running from a non-JavaFX thread.
+        Platform.runLater(
+            () -> {
+                String url = "https://www.youtube.com/embed/" + videoID + "?controls=0&autoplay=1";
+                webview_YouTubeVideo.getEngine().load(url);
+            }
+        );
     }
 
     // Show new message in text window
@@ -71,6 +84,15 @@ public class ServerAppController implements ISubscriber {
         log(msg.getSentFrom() + ": " + msg.getChatMessage());
     }
 
+    // Received a SongRequest
+    private void handleSongRequest(SongRequest msg) {
+        log("(" + msg.getSentFrom() + ") has requested a song with ID: " + msg.getSongID());
+
+        // Currently it just immediately plays the new video rather than using playlist functionality
+        // Might be expanded upon in a later update
+        playNewVideo(msg.getSongID());
+    }
+
     @Override
     public void onMessageReceived(NetworkMessage message) {
         switch (message.getClass().getSimpleName()) {
@@ -80,6 +102,10 @@ public class ServerAppController implements ISubscriber {
 
             case "ChatMessage":
                 handleChatMessage((ChatMessage) message);
+                break;
+
+            case "SongRequest":
+                handleSongRequest((SongRequest) message);
                 break;
 
             default:
