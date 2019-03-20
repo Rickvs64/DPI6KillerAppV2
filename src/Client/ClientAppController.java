@@ -88,7 +88,7 @@ public class ClientAppController implements ISubscriber {
     }
 
     // Send a private whisper
-    private void trySendWhisper(String msg) throws JMSException {
+    private void trySendWhisper(String msg) {
         // Attempting to retrieve: /w (([USERNAME])) [Content]
         Integer start = msg.indexOf(" ") + 1;
         Integer end = msg.indexOf(" ", start+1); // Search from start+1
@@ -99,7 +99,11 @@ public class ClientAppController implements ISubscriber {
         String content = msg.substring(start);
 
         Whisper whisper = new Whisper(username, intendedReceiver, content);
-        connector.sendMessageToQueue(whisper, "WhispersFromClient");
+        try {
+            connector.sendMessageToQueue(whisper, "WhispersFromClient");
+        } catch (JMSException e) {
+            // Todo: Update UI to reflect connection failure
+        }
 
         // Interesting detail: this user will not RECEIVE this whisper but we do want to show it in chat history
         // So we'll be adding this one manually, functions as if we received it
@@ -107,8 +111,12 @@ public class ClientAppController implements ISubscriber {
     }
 
     // Send a public chat message
-    private void trySendChat(String msg) throws JMSException {
-        connector.sendMessageToQueue(new ChatMessage(username, msg), "ChatMessagesFromClient");
+    private void trySendChat(String msg) {
+        try {
+            connector.sendMessageToQueue(new ChatMessage(username, msg), "ChatMessagesFromClient");
+        } catch (JMSException e) {
+            // Todo: Update UI to reflect connection failure
+        }
     }
 
     // Received a ChatMessage
@@ -127,14 +135,18 @@ public class ClientAppController implements ISubscriber {
     }
 
     // Send a song request
-    private void trySendSongRequest(String songID) throws JMSException {
-        connector.sendMessageToQueue(new SongRequest(username, songID), "SongRequestsFromClient");
+    private void trySendSongRequest(String songID) {
+        try {
+            connector.sendMessageToQueue(new SongRequest(username, songID), "SongRequestsFromClient");
+        } catch (JMSException e) {
+            // Todo: Update UI to reflect connection failure
+        }
     }
 
 
     // Username submit button pressed
     @FXML
-    private void submitUsername() throws JMSException {
+    private void submitUsername() {
         if (!txt_Username.getText().trim().isEmpty() && txt_Username.getText().trim() != "") {
             // First trim (should be unnecessary but still)
             username = txt_Username.getText().trim();
@@ -143,7 +155,11 @@ public class ClientAppController implements ISubscriber {
             username = username.replaceAll("\\s","");
 
             initConnector();
-            connector.sendMessageToQueue(new ClientInitMessage(username), "InitsFromClient");
+            try {
+                connector.sendMessageToQueue(new ClientInitMessage(username), "InitsFromClient");
+            } catch (JMSException e) {
+                // Todo: Update UI to reflect connection failure
+            }
             setControlsEnabled(true);
             txt_Username.setText(username); // Since it might have been altered by Trim() or Regex
         }
@@ -151,7 +167,7 @@ public class ClientAppController implements ISubscriber {
 
     // Chat message / whisper submit button pressed
     @FXML
-    private void submitMessage() throws JMSException {
+    private void submitMessage(){
         String actualMessage = txt_Chat.getText().trim();
 
         if (isWhisper(actualMessage)) {
@@ -166,7 +182,7 @@ public class ClientAppController implements ISubscriber {
 
     // Song request submit button pressed
     @FXML
-    private void submitSongRequest() throws JMSException {
+    private void submitSongRequest() {
         String actualID = txt_SongRequest.getText().trim();
 
         trySendSongRequest(actualID);
